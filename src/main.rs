@@ -42,33 +42,18 @@ async fn main() {
 
         if let Some(dir) = direction_to_spawn {
             let route = Route::Straight;
-            vehicles.push(Vehicle::new(Direction::North, route));
-            vehicles.push(Vehicle::new(dir, route));
+            // safety distnece
+            // vehicles.push(Vehicle::new(dir, route)); // add_car
+            add_car(&mut vehicles, dir, route);
         }
 
-        // Mise a jour position des voitures
-        for v in &mut vehicles {
-            match v.direction {
-                Direction::North => {
-                    v.y += v.velocity;
-                }
-                Direction::South => {
-                    v.y -= v.velocity;
-                }
-                Direction::East => {
-                    v.x += v.velocity;
-                }
-                Direction::West => {
-                    v.x -= v.velocity;
-                }
-            }
-        }
+        moving_cars(&mut vehicles);
 
         // Routes
         let screen_width = screen_width();
         let screen_height = screen_height();
         render_route(screen_width, screen_height);
-        render_trafic_lights(); 
+        render_trafic_lights();
 
         // voitures
         for v in &vehicles {
@@ -79,18 +64,3 @@ async fn main() {
     }
 }
 
-fn render_route(w: f32, h: f32) {
-    draw_line(0.0, h / 2.0, w, h / 2.0, 120.0, BLACK);
-    draw_line(0.0, h / 2.0, w, h / 2.0, 2.0, WHITE);
-    draw_line(w / 2.0, 0.0, w / 2.0, h, 120.0, BLACK);
-    draw_line(w / 2.0, 0.0, 500.0, 391.0, 2.0, WHITE);
-    draw_line(501.0, 510.0, 501.0, 899.0, 2.0, WHITE);
-}
-
-fn render_trafic_lights() {
-    let square_size = 50.0;
-    draw_rectangle(561.0, 339.0, square_size, square_size, RED);
-    draw_rectangle(389.0, 339.0, square_size, square_size, RED);
-    draw_rectangle(560.0, 510.0, square_size, square_size, RED);
-    draw_rectangle(389.0, 510.0, square_size, square_size, RED);
-}
