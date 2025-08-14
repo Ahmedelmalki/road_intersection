@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 #[allow(deprecated)]
 use ::rand::{ thread_rng, Rng };
 
-pub const WINDOW_WIDTH: f32 = 600.0;
+pub const WINDOW_WIDTH: f32 = 1337.0;
 pub const WINDOW_HEIGHT: f32 = 600.0;
 pub const THICKNESS: f32 = 100.0;
 
@@ -79,7 +79,6 @@ pub fn window_conf() -> Conf {
     }
 }
 
-// Note: if u moved the caller of this fn to this file remove "pub"
 pub fn render_route(w: f32, h: f32) {
     // rendering the outer rects
     draw_line(0.0, h / 2.0, w, h / 2.0, THICKNESS, BLACK);
@@ -97,64 +96,55 @@ pub fn render_route(w: f32, h: f32) {
     );
 }
 // ############################ Traffic lights logic ##################################
-
-use std::thread;
-use std::time::Duration;
-pub struct TrafficLight {
-    x: f32,
-    y: f32,
-    id: u8,
-    color: Color,
-    state: State,
+pub struct TrafficLightController {
+    pub current_green_direction: Direction,
+    pub timer: f32,
+    pub green_duration: f32,
 }
 
-pub enum State {
-    ON,
-    OFF,
-}
-
-impl TrafficLight {
-    fn new(x: f32, y: f32, id: u8) -> Self {
-        Self { x, y, id, color: RED, state: State::OFF }
-    }
-    // capacity = floor(lane_length / (vehicle_length + safety_gap))
-    // The primary function of your traffic light system is to avoid collisions between vehicles passing through the intersection, while dynamically adapting to congestion.
-    pub fn controler(lights: &mut Vec<TrafficLight>) {
-        for light in lights {
-            light.color = GREEN;
-            light.state = State::ON;
-            thread::sleep(Duration::from_secs(10));
+impl TrafficLightController {
+    pub fn new() -> Self {
+        Self {
+            current_green_direction: Direction::North,
+            timer: 0.0,
+            green_duration: 5.0, // 3 seconds green
         }
     }
+
+    pub fn update(&mut self, delta_time: f32) {
+        self.timer += delta_time;
+        
+        if self.timer >= self.green_duration {
+            self.timer = 0.0;
+            // Cycle through directions: North -> East -> South -> West
+            self.current_green_direction = match self.current_green_direction {
+                Direction::North => Direction::East,
+                Direction::East => Direction::South,
+                Direction::South => Direction::West,
+                Direction::West => Direction::North,
+            };
+        }
+    }
+
+    pub fn is_green(&self, direction: Direction) -> bool {
+        self.current_green_direction == direction
+    }
 }
 
-pub fn render_trafic_lights() {
+pub fn render_traffic_lights(controller: &TrafficLightController) {
     let s = 50.0; // square size
-    let top_left = TrafficLight::new(
-        WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s,
-        WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s,
-        1
-    );
+    
+    // Define the 4 traffic light positions with their corresponding directions
+    let lights = [
+        (Direction::North, WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s, WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s),
+        (Direction::West, WINDOW_WIDTH / 2.0 + THICKNESS / 2.0, WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s),
+        (Direction::South, WINDOW_WIDTH / 2.0 + THICKNESS / 2.0, WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0),
+        (Direction::East, WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s, WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0),
+    ];
 
-    let top_right = TrafficLight::new(
-        WINDOW_WIDTH / 2.0 + THICKNESS / 2.0,
-        WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s,
-        2
-    );
-    let bottom_right = TrafficLight::new(
-        WINDOW_WIDTH / 2.0 + THICKNESS / 2.0,
-        WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0,
-        3
-    );
-    let bottom_left = TrafficLight::new(
-        WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s,
-        WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0,
-        4
-    );
-    draw_rectangle(top_left.x, top_left.y, s, s, RED);
-    draw_rectangle(top_right.x, top_right.y, s, s, RED);
-    draw_rectangle(bottom_left.x, bottom_left.y, s, s, RED);
-    draw_rectangle(bottom_right.x, bottom_right.y, s, s, RED);
-   
+    // Draw each traffic light with the appropriate color
+    for (direction, x, y) in lights {
+        let color = if controller.is_green(direction) { GREEN } else { RED };
+        draw_rectangle(x, y, s, s, color);
+    }
 }
-

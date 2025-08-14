@@ -3,18 +3,20 @@ use macroquad::prelude::*;
 mod moving_cars;
 use moving_cars::*;
 
-
 #[allow(deprecated)]
 use ::rand::{ thread_rng, Rng };
 
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut vehicles: Vec<Vehicle> = Vec::new();
+        let mut traffic_controller = TrafficLightController::new();
+
 
     loop {
         clear_background(GRAY);
         clear_cars(&mut vehicles);
-        // dbg!(&vehicles);
+        let delta_time = get_frame_time();
+        traffic_controller.update(delta_time);
         if is_key_pressed(KeyCode::Escape) {
             break;
         }
@@ -49,13 +51,13 @@ async fn main() {
             add_car(&mut vehicles, dir);
         }
 
-        moving_cars(&mut vehicles);
+        moving_cars(&mut vehicles, &traffic_controller);
 
         // Routes
         let screen_width = screen_width();
         let screen_height = screen_height();
         render_route(screen_width, screen_height);
-         render_trafic_lights();
+        render_traffic_lights(&traffic_controller);
 
         // voitures
         for v in &vehicles {
