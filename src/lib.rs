@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 #[allow(deprecated)]
 use ::rand::{ thread_rng, Rng };
 
-pub const WINDOW_WIDTH: f32 = 1337.0;
+pub const WINDOW_WIDTH: f32 = 1000.0;
 pub const WINDOW_HEIGHT: f32 = 600.0;
 pub const THICKNESS: f32 = 100.0;
 
@@ -171,7 +171,7 @@ pub fn render_traffic_lights(controller: &TrafficLightController) {
     let lights = [
         (
             Direction::North,
-            WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s,
+            (WINDOW_WIDTH / 2.0) - (THICKNESS / 2.0) - s,
             WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s,
         ),
         (

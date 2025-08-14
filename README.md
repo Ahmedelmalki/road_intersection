@@ -25,7 +25,7 @@ This project is a traffic simulation designed to solve the traffic problem in a 
     
 ### Getting Started
 
-This project is built with Rust and uses the macroquad crate for visualization.
+This project is built with Rust and uses the _macroquad_ crate for visualization.
 
 1- Clone the repository:
 ```

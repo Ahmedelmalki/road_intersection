@@ -4,7 +4,6 @@ use macroquad::prelude::*;
 
 pub fn moving_cars(vehicles: &mut Vec<Vehicle>, controller: &TrafficLightController) {
     // Mise a jour position des voitures
-
     for i in 0..vehicles.len() {
         let should_stop =
             should_stop_at_light(&vehicles[i], controller) || stop_before(&vehicles[i], vehicles);
@@ -20,7 +19,7 @@ pub fn moving_cars(vehicles: &mut Vec<Vehicle>, controller: &TrafficLightControl
                     v.x += v.velocity;
                 } else if
                     v.route == Route::Right &&
-                    (v.y - (WINDOW_HEIGHT / 2.0 - LANE_WIDTH)).abs() < v.velocity
+                    (v.y - (WINDOW_HEIGHT / 2.0 - CAR_LENGTH)).abs() < v.velocity
                 {
                     v.x -= v.velocity;
                 } else {
@@ -94,12 +93,12 @@ fn should_stop_at_light(vehicle: &Vehicle, controller: &TrafficLightController) 
         Direction::South => {
             // Coming from north, stopping before intersection
             vehicle.y <= intersection_center_y + THICKNESS / 2.0 + stop_distance &&
-                vehicle.y >= intersection_center_y + THICKNESS / 2.0
+            vehicle.y >= intersection_center_y + THICKNESS / 2.0
         }
         Direction::East => {
             // Coming from west, stopping before intersection
             vehicle.x >= intersection_center_x - THICKNESS / 2.0 - stop_distance &&
-                vehicle.x <= intersection_center_x - THICKNESS / 2.0
+            vehicle.x <= intersection_center_x - THICKNESS / 2.0
         }
         Direction::West => {
             // Coming from east, stopping before intersection
