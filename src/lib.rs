@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 #[allow(deprecated)]
 use ::rand::{ thread_rng, Rng };
 
-pub const WINDOW_WIDTH: f32 = 1330.0;
+pub const WINDOW_WIDTH: f32 = 600.0;
 pub const WINDOW_HEIGHT: f32 = 600.0;
 pub const THICKNESS: f32 = 100.0;
 
@@ -22,7 +22,7 @@ pub enum Direction {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Route { // turns
+pub enum Route {
     Straight,
     Left,
     Right,
@@ -39,20 +39,24 @@ pub struct Vehicle {
 }
 
 impl Vehicle {
-    pub fn new(direction: Direction, route: Route) -> Self {
+    pub fn new(direction: Direction) -> Self {
         let (x, y) = match direction {
-            Direction::North => (WINDOW_WIDTH / 2.0 - LANE_WIDTH + 2.0, 0.0 - CAR_LENGTH), 
+            Direction::North => (WINDOW_WIDTH / 2.0 - LANE_WIDTH + 2.0, 0.0 - CAR_LENGTH),
             Direction::South => (WINDOW_WIDTH / 2.0 + 2.0, WINDOW_HEIGHT + CAR_LENGTH + 2.0),
-            Direction::East => (0.0 - CAR_LENGTH, WINDOW_HEIGHT / 2.0 - LANE_WIDTH),
-            Direction::West => (WINDOW_WIDTH + CAR_LENGTH, WINDOW_HEIGHT / 2.0 +  2.0),
+            Direction::East => (0.0 - CAR_LENGTH, WINDOW_HEIGHT / 2.0 + 2.0),
+            Direction::West => (WINDOW_WIDTH + CAR_LENGTH, WINDOW_HEIGHT / 2.0 - LANE_WIDTH),
         };
         #[allow(deprecated)]
         let color = match thread_rng().gen_range(0..3) {
-            0 => RED,
+            0 => ORANGE,
             1 => GREEN,
             _ => BLUE,
         };
-
+        let route = match color {
+            ORANGE => Route::Left,
+            GREEN => Route::Right,
+            _ => Route::Straight,
+        };
         Vehicle {
             x,
             y,
@@ -63,32 +67,6 @@ impl Vehicle {
         }
     }
 }
-
-// #[derive(Copy, Clone, Debug, PartialEq)]
-// struct TrafficLight {
-//     x: f32,
-//     y: f32,
-//     state: Color,
-//     direction: Direction,
-// }
-
-// impl TrafficLight {
-//     fn new(direction: Direction) -> Self {
-//         let (x, y) = match direction {
-//             Direction::North => (WINDOW_WIDTH / 2.0 + (LANE_WIDTH / 2.0), WINDOW_HEIGHT / 2.0 + (LANE_WIDTH / 2.0)),
-//             Direction::South => (WINDOW_WIDTH / 2.0 - (LANE_WIDTH / 2.0), WINDOW_HEIGHT / 2.0 - (LANE_WIDTH / 2.0)),
-//             Direction::East => (WINDOW_WIDTH / 2.0 + (LANE_WIDTH / 2.0), WINDOW_HEIGHT / 2.0 - (LANE_WIDTH / 2.0)),
-//             Direction::West => (WINDOW_WIDTH / 2.0 - (LANE_WIDTH / 2.0), WINDOW_HEIGHT / 2.0 + (LANE_WIDTH / 2.0)),
-//         };
-
-//         TrafficLight {
-//             x: x - TRAFFIC_LIGHT_SIZE,
-//             y: y - TRAFFIC_LIGHT_SIZE,
-//             state: RED,
-//             direction,
-//         }
-//     }
-// }
 
 pub fn window_conf() -> Conf {
     // short for config
@@ -101,26 +79,6 @@ pub fn window_conf() -> Conf {
     }
 }
 
-pub fn moving_cars(vehicles: &mut Vec<Vehicle>) {
-    // Mise a jour position des voitures
-    for v in vehicles {
-        match v.direction {
-            Direction::North => {
-                v.y += v.velocity;
-            }
-            Direction::South => {
-                v.y -= v.velocity;
-            }
-            Direction::East => {
-                v.x += v.velocity;
-            }
-            Direction::West => {
-                v.x -= v.velocity;
-            }
-        }
-    }
-}
-
 // Note: if u moved the caller of this fn to this file remove "pub"
 pub fn render_route(w: f32, h: f32) {
     // rendering the outer rects
@@ -129,65 +87,74 @@ pub fn render_route(w: f32, h: f32) {
     // rendering the inner lane separater
     draw_line(w / 2.0, 0.0, w / 2.0, h, 2.0, WHITE);
     draw_line(0.0, h / 2.0, w, h / 2.0, 2.0, WHITE);
+    draw_rectangle(
+        // turning point
+        WINDOW_WIDTH / 2.0 - THICKNESS / 2.0,
+        WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0,
+        THICKNESS,
+        THICKNESS,
+        BLACK
+    );
+}
+// ############################ Traffic lights logic ##################################
+
+use std::thread;
+use std::time::Duration;
+pub struct TrafficLight {
+    x: f32,
+    y: f32,
+    id: u8,
+    color: Color,
+    state: State,
+}
+
+pub enum State {
+    ON,
+    OFF,
+}
+
+impl TrafficLight {
+    fn new(x: f32, y: f32, id: u8) -> Self {
+        Self { x, y, id, color: RED, state: State::OFF }
+    }
+    // capacity = floor(lane_length / (vehicle_length + safety_gap))
+    // The primary function of your traffic light system is to avoid collisions between vehicles passing through the intersection, while dynamically adapting to congestion.
+    pub fn controler(lights: &mut Vec<TrafficLight>) {
+        for light in lights {
+            light.color = GREEN;
+            light.state = State::ON;
+            thread::sleep(Duration::from_secs(10));
+        }
+    }
 }
 
 pub fn render_trafic_lights() {
-    let square_size = 50.0;
-    draw_rectangle(
-        WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - square_size,
-        WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - square_size,
-        square_size,
-        square_size,
-        RED
+    let s = 50.0; // square size
+    let top_left = TrafficLight::new(
+        WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s,
+        WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s,
+        1
     );
-    draw_rectangle(
+
+    let top_right = TrafficLight::new(
         WINDOW_WIDTH / 2.0 + THICKNESS / 2.0,
-        WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - square_size,
-        square_size,
-        square_size,
-        RED
+        WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s,
+        2
     );
-    draw_rectangle(
-        WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - square_size,
-        WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0,
-        square_size,
-        square_size,
-        RED
-    );
-    draw_rectangle(
+    let bottom_right = TrafficLight::new(
         WINDOW_WIDTH / 2.0 + THICKNESS / 2.0,
         WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0,
-        square_size,
-        square_size,
-        RED
+        3
     );
+    let bottom_left = TrafficLight::new(
+        WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s,
+        WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0,
+        4
+    );
+    draw_rectangle(top_left.x, top_left.y, s, s, RED);
+    draw_rectangle(top_right.x, top_right.y, s, s, RED);
+    draw_rectangle(bottom_left.x, bottom_left.y, s, s, RED);
+    draw_rectangle(bottom_right.x, bottom_right.y, s, s, RED);
+   
 }
 
-// ################################ safety distence logic ######################################
-pub fn add_car(car_vec: &mut Vec<Vehicle>, dir: Direction, route: Route) {
-    let safety_distance: f32 = 60.0;
-
-    // Check the last car in the same direction
-    if
-        let Some(last_car) = car_vec
-            .iter()
-            .rev()
-            .find(|v| v.direction == dir)
-    {
-        println!("north  {} {}", last_car.y, screen_height() - safety_distance);
-        println!("{}", last_car.y < screen_height() - safety_distance);
-        let too_close = match dir {
-            Direction::North => last_car.y > safety_distance,
-            Direction::South => last_car.y < screen_height() - safety_distance,
-            Direction::East => last_car.x > safety_distance,
-            Direction::West => last_car.x < screen_width() - safety_distance,
-        };
-        if !too_close {
-            return;
-        }
-    }
-
-    // Create vehicle with proper spawn position
-    let new_vehicle = Vehicle::new(dir, route);
-    car_vec.push(new_vehicle);
-}

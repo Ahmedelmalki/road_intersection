@@ -1,5 +1,9 @@
 use road_intersection::*;
 use macroquad::prelude::*;
+mod moving_cars;
+use moving_cars::*;
+
+
 #[allow(deprecated)]
 use ::rand::{ thread_rng, Rng };
 
@@ -9,7 +13,8 @@ async fn main() {
 
     loop {
         clear_background(GRAY);
-
+        clear_cars(&mut vehicles);
+        // dbg!(&vehicles);
         if is_key_pressed(KeyCode::Escape) {
             break;
         }
@@ -41,10 +46,7 @@ async fn main() {
         }
 
         if let Some(dir) = direction_to_spawn {
-            let route = Route::Straight;
-            // safety distnece
-            // vehicles.push(Vehicle::new(dir, route)); // add_car
-            add_car(&mut vehicles, dir, route);
+            add_car(&mut vehicles, dir);
         }
 
         moving_cars(&mut vehicles);
@@ -53,7 +55,7 @@ async fn main() {
         let screen_width = screen_width();
         let screen_height = screen_height();
         render_route(screen_width, screen_height);
-        render_trafic_lights();
+         render_trafic_lights();
 
         // voitures
         for v in &vehicles {
@@ -63,4 +65,3 @@ async fn main() {
         next_frame().await;
     }
 }
-
