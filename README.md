@@ -25,7 +25,7 @@ This project is a traffic simulation designed to solve the traffic problem in a 
     
 ### Getting Started
 
-This project is built with Rust and uses the sdl2 crate for visualization.
+This project is built with Rust and uses the macroquad crate for visualization.
 
 1- Clone the repository:
 ```
@@ -34,15 +34,9 @@ git clone https://learn.zone01oujda.ma/git/aelmalki/road_intersection.git
 
 Build and run the project:
 ```
-cargo run
+cargo r
 ```
 
-### Optional Bonus Features
-- Implement vehicle and traffic light animations.
-
-- Integrate image rendering for more realistic graphics.
-
-- Enhance the traffic light algorithm for better efficiency.
 
 ### Team
 

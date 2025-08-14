@@ -111,60 +111,64 @@ fn should_stop_at_light(vehicle: &Vehicle, controller: &TrafficLightController) 
 }
 
 fn stop_before(v: &Vehicle, car_vec: &Vec<Vehicle>) -> bool {
-    let safety_distance = SAFETY_GAP; // or whatever value you want
+    // Don't check collisions if vehicle is in or past intersection
+    let intersection_center_x = WINDOW_WIDTH / 2.0;
+    let intersection_center_y = WINDOW_HEIGHT / 2.0;
+    let intersection_boundary = THICKNESS / 2.0;
 
-    // Find cars in the same lane (same direction) that are ahead of this vehicle
+    let in_intersection = match v.direction {
+        Direction::North => v.y >= intersection_center_y - intersection_boundary,
+        Direction::South => v.y <= intersection_center_y + intersection_boundary,
+        Direction::East => v.x >= intersection_center_x - intersection_boundary,
+        Direction::West => v.x <= intersection_center_x + intersection_boundary,
+    };
+
+    if in_intersection {
+        return false; // Don't stop if already in intersection
+    }
+    let safety_distance = SAFETY_GAP + 10.0; // Add buffer
+
     for other_car in car_vec {
-        // Skip if it's the same car or different direction
-        if (other_car as *const _) == (v as *const _) || other_car.direction != v.direction {
+        // Skip self
+        if (other_car as *const _) == (v as *const _) {
             continue;
         }
 
-        // Check if the other car is ahead and calculate distance
-        let (is_ahead, distance) = match v.direction {
+        // Check if cars are in same lane and direction
+        let (same_lane, is_ahead, distance) = match v.direction {
             Direction::North => {
-                // Moving up (y decreasing), so "ahead" means smaller y
-                if other_car.y < v.y {
-                    (true, v.y - other_car.y - CAR_LENGTH)
-                } else {
-                    (false, 0.0)
-                }
+                let same_lane = (v.x - other_car.x).abs() < 5.0;
+                let is_ahead = other_car.y > v.y; // Ahead means higher Y
+                let distance = if is_ahead { other_car.y - v.y - CAR_LENGTH } else { 0.0 };
+                (same_lane, is_ahead, distance)
             }
             Direction::South => {
-                // Moving down (y increasing), so "ahead" means larger y
-                if other_car.y > v.y {
-                    (true, other_car.y - v.y - CAR_LENGTH)
-                } else {
-                    (false, 0.0)
-                }
+                let same_lane = (v.x - other_car.x).abs() < 5.0;
+                let is_ahead = other_car.y < v.y; // Ahead means lower Y
+                let distance = if is_ahead { v.y - other_car.y - CAR_LENGTH } else { 0.0 };
+                (same_lane, is_ahead, distance)
             }
             Direction::East => {
-                // Moving right (x increasing), so "ahead" means larger x
-                if other_car.x > v.x {
-                    (true, other_car.x - v.x - CAR_LENGTH)
-                } else {
-                    (false, 0.0)
-                }
+                let same_lane = (v.y - other_car.y).abs() < 5.0;
+                let is_ahead = other_car.x > v.x; // Ahead means higher X
+                let distance = if is_ahead { other_car.x - v.x - CAR_LENGTH } else { 0.0 };
+                (same_lane, is_ahead, distance)
             }
             Direction::West => {
-                // Moving left (x decreasing), so "ahead" means smaller x
-                if other_car.x < v.x {
-                    (true, v.x - other_car.x - CAR_LENGTH)
-                } else {
-                    (false, 0.0)
-                }
+                let same_lane = (v.y - other_car.y).abs() < 5.0;
+                let is_ahead = other_car.x < v.x; // Ahead means lower X
+                let distance = if is_ahead { v.x - other_car.x - CAR_LENGTH } else { 0.0 };
+                (same_lane, is_ahead, distance)
             }
         };
 
-        // If there's a car ahead and it's too close, stop
-        if is_ahead && distance < safety_distance {
+        if same_lane && is_ahead && distance < safety_distance {
             return true;
         }
     }
 
-    false // No obstacles, safe to move
+    false
 }
-
 // ########################## clean up logic ###########################
 
 pub fn clear_cars(cars_vec: &mut Vec<Vehicle>) {
