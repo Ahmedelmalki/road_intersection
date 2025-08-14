@@ -69,7 +69,6 @@ impl Vehicle {
 }
 
 pub fn window_conf() -> Conf {
-    // short for config
     Conf {
         window_title: "Road Intersection".to_owned(),
         window_width: WINDOW_WIDTH as i32,
@@ -111,10 +110,44 @@ impl TrafficLightController {
         }
     }
 
-    pub fn update(&mut self, delta_time: f32) {
+    // ********************** max capacity logic  ************************
+    fn get_lane_capacity(&self) -> usize {
+        let lane_length = WINDOW_WIDTH.min(WINDOW_HEIGHT) / 2.0 - THICKNESS / 2.0; // Distance from spawn to intersection
+        let capacity = (lane_length / (CAR_LENGTH + SAFETY_GAP)).floor() as usize;
+        capacity
+    }
+
+    fn count_waiting_cars(&self, vehicles: &[Vehicle], direction: Direction) -> usize {
+        vehicles
+            .iter()
+            .filter(|v| v.direction == direction && self.is_approaching_intersection(v))
+            .count()
+    }
+
+    fn is_approaching_intersection(&self, vehicle: &Vehicle) -> bool {
+        let center_x = WINDOW_WIDTH / 2.0;
+        let center_y = WINDOW_HEIGHT / 2.0;
+        let boundary = THICKNESS / 2.0;
+
+        match vehicle.direction {
+            Direction::North => vehicle.y < center_y - boundary,
+            Direction::South => vehicle.y > center_y + boundary,
+            Direction::East => vehicle.x < center_x - boundary,
+            Direction::West => vehicle.x > center_x + boundary,
+        }
+    }
+
+    pub fn update(&mut self, delta_time: f32, vehicles: &[Vehicle]) {
         self.timer += delta_time;
-        
-        if self.timer >= self.green_duration {
+        let capacity = self.get_lane_capacity();
+        let current_queue = self.count_waiting_cars(vehicles, self.current_green_direction);
+
+        // Extend green time if lane is at/near capacity
+        let mut effective_duration = self.green_duration;
+        if current_queue >= capacity {
+            effective_duration += 2.0; // Add 2 extra seconds
+        }
+        if self.timer >= effective_duration {
             self.timer = 0.0;
             // Cycle through directions: North -> East -> South -> West
             self.current_green_direction = match self.current_green_direction {
@@ -133,13 +166,29 @@ impl TrafficLightController {
 
 pub fn render_traffic_lights(controller: &TrafficLightController) {
     let s = 50.0; // square size
-    
+
     // Define the 4 traffic light positions with their corresponding directions
     let lights = [
-        (Direction::North, WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s, WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s),
-        (Direction::West, WINDOW_WIDTH / 2.0 + THICKNESS / 2.0, WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s),
-        (Direction::South, WINDOW_WIDTH / 2.0 + THICKNESS / 2.0, WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0),
-        (Direction::East, WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s, WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0),
+        (
+            Direction::North,
+            WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s,
+            WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s,
+        ),
+        (
+            Direction::West,
+            WINDOW_WIDTH / 2.0 + THICKNESS / 2.0,
+            WINDOW_HEIGHT / 2.0 - THICKNESS / 2.0 - s,
+        ),
+        (
+            Direction::South,
+            WINDOW_WIDTH / 2.0 + THICKNESS / 2.0,
+            WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0,
+        ),
+        (
+            Direction::East,
+            WINDOW_WIDTH / 2.0 - THICKNESS / 2.0 - s,
+            WINDOW_HEIGHT / 2.0 + THICKNESS / 2.0,
+        ),
     ];
 
     // Draw each traffic light with the appropriate color

@@ -9,14 +9,13 @@ use ::rand::{ thread_rng, Rng };
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut vehicles: Vec<Vehicle> = Vec::new();
-        let mut traffic_controller = TrafficLightController::new();
-
+    let mut traffic_controller = TrafficLightController::new();
 
     loop {
         clear_background(GRAY);
         clear_cars(&mut vehicles);
         let delta_time = get_frame_time();
-        traffic_controller.update(delta_time);
+        traffic_controller.update(delta_time, &vehicles);
         if is_key_pressed(KeyCode::Escape) {
             break;
         }

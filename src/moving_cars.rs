@@ -84,8 +84,7 @@ fn should_stop_at_light(vehicle: &Vehicle, controller: &TrafficLightController) 
     // Check if the vehicle is close to the intersection
     let intersection_center_x = WINDOW_WIDTH / 2.0;
     let intersection_center_y = WINDOW_HEIGHT / 2.0;
-    let stop_distance = CAR_LENGTH; // Distance before intersection to stop
-
+    let stop_distance = CAR_LENGTH; 
     match vehicle.direction {
         Direction::North => {
             // Coming from south, stopping before intersection
